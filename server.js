@@ -6,9 +6,21 @@ const winston = require('winston')
 
 const bodyParser = require('body-parser');
 const app = express()
-app.use(cors())
+app.use(cors(corsOptions))
 app.use(helmet())
 app.use(bodyParser.json())
+
+var whitelist = ['http://127.0.0.1:5500/index.html', 'http://example2.com']
+var corsOptions = {
+  origin: function (origin, callback) {
+    if (whitelist.indexOf(origin) !== -1) {
+      callback(null, true)
+    } else {
+      callback(new Error('Not allowed by CORS'))
+    }
+  }
+}
+
 // app.use(morgan('tiny'))
 // POST /secret 200 9 - 2.548 ms
 
@@ -34,7 +46,16 @@ winston.add(files);
 //   format: winston.format.simple()
 // }))
 
-app.get('/', (req, res) => res.send('Hello World!'))
+
+
+app.get('/', (req, res) => {
+  res.cookie('session', '1', { httpOnly: true })
+  res.cookie('session', '1', { secure: true })
+  res.set({
+    'Content-Security-Policy': "script-src 'self' 'https://apis.google.com'"
+  })
+  res.send('Hello World!')
+})
 
 app.post('/secret', (req, res) => {
   const { userInput } = req.body;
